@@ -1,12 +1,23 @@
 import tkinter
 from tkinter import *
 import random
+import pyautogui
+import os
+import time
 
 global PLAYER  # PLAYER = 3: X-win, PLAYER = 4: O-win.
+global GAME_NUM, TURN_NUM
 
 
 def start_game():
-    global PLAYER
+    global PLAYER, GAME_NUM, TURN_NUM
+    try:
+        GAME_NUM = int(list(os.listdir('history')[-1])[-1])
+        GAME_NUM += 1
+    except FileNotFoundError:
+        os.mkdir(path="C:/Users/Pampam/PycharmProjects/StartProject2/history")
+        GAME_NUM = 0
+    TURN_NUM = 0
     PLAYER = random.randint(1, 2)
     for button in main_w.winfo_children()[:9]:
         button.grid()
@@ -21,10 +32,12 @@ def tile_clicked(event):
             event.widget["image"] = x_mark
             event.widget["text"] = "x"
             PLAYER += 1
+            screenshot()
         elif PLAYER == 2 and event.widget["text"] == "-":
             event.widget["image"] = o_mark
             event.widget["text"] = "o"
             PLAYER -= 1
+            screenshot()
     played_tiles = []
     for widget in main_w.winfo_children()[:9]:
         played_tiles.append(widget["text"])
@@ -73,6 +86,23 @@ def tile_clicked(event):
                 main_w.winfo_children()[:9][x]["image"] = x_mark_draw
             elif main_w.winfo_children()[:9][x]["text"] == "o":
                 main_w.winfo_children()[:9][x]["image"] = o_mark_draw
+
+
+def screenshot():
+    global GAME_NUM, TURN_NUM
+    try:
+        os.mkdir(path=f"C:/Users/Pampam/PycharmProjects/StartProject2/history/Game{GAME_NUM}")
+    except FileExistsError:
+        pass
+
+    TURN_NUM += 1
+    pyautogui.screenshot(f"history/Game{GAME_NUM}/turn{TURN_NUM}.png",
+                         region=(
+                             main_w.winfo_rootx(),
+                             main_w.winfo_rooty(),
+                             main_w.winfo_width(),
+                             main_w.winfo_height()
+                         ))
 
 
 def hide_tiles():
@@ -217,7 +247,7 @@ replay_button = Button(main_w,
                        highlightthickness=0,
                        border=0,
                        relief=tkinter.RIDGE,
-                       command=lambda: (hide_tiles(), start_game()),
+                       command=lambda: (hide_tiles(), screenshot(), start_game()),
                        )
 replay_button.grid(
     row=1,
