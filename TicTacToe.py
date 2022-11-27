@@ -3,30 +3,52 @@ from tkinter import *
 import random
 import pyautogui
 import os
-import time
 
-global PLAYER  # PLAYER = 3: X-win, PLAYER = 4: O-win.
+global PLAYER, PLAYER_IMAGE, AI_IMAGE  # PLAYER = 4: X-win, PLAYER = 5: O-win.
 global GAME_NUM, TURN_NUM
+PLAYER = 0
 
 
-def start_game():
-    global PLAYER, GAME_NUM, TURN_NUM
+def start_game(ai=False):
+    global PLAYER, GAME_NUM, TURN_NUM, PLAYER_IMAGE, AI_IMAGE
     try:
-        GAME_NUM = int(list(os.listdir('history')[-1])[-1])
+        played = [int(element.strip("Game")) for element in os.listdir('history')]
+        played.sort()
+        GAME_NUM = played[-1]
         GAME_NUM += 1
     except FileNotFoundError:
-        os.mkdir(path="C:/Users/Pampam/PycharmProjects/StartProject2/history")
         GAME_NUM = 0
-    TURN_NUM = 0
-    PLAYER = random.randint(1, 2)
-    for button in main_w.winfo_children()[:9]:
-        button.grid()
-    for button in main_w.winfo_children()[9:]:
-        button.grid_remove()
+        os.mkdir(path="history")
+    except IndexError:
+        GAME_NUM = 0
+        os.mkdir(path=f"history/Game{GAME_NUM}")
+    if not ai:
+        TURN_NUM = 0
+        PLAYER = random.randint(1, 2)
+        for button in main_w.winfo_children()[:9]:
+            button.grid()
+        for button in main_w.winfo_children()[9:]:
+            button.grid_remove()
+        main_w.winfo_children()[-4].grid()
+        replay_button.config(command=lambda: (hide_tiles(), screenshot(), start_game()))
+    else:
+        TURN_NUM = 0
+        PLAYER = 3
+        for button in main_w.winfo_children()[:9]:
+            button.grid()
+        for button in main_w.winfo_children()[9:]:
+            button.grid_remove()
+        main_w.winfo_children()[-4].grid()
+        marks = [x_mark, o_mark]
+        random.shuffle(marks)
+        PLAYER_IMAGE = random.choice(marks)
+        marks.remove(PLAYER_IMAGE)
+        AI_IMAGE = marks[0]
+        replay_button.configure(command=lambda: (hide_tiles(), screenshot(), start_game(ai=True)))
 
 
 def tile_clicked(event):
-    global PLAYER
+    global PLAYER, PLAYER_IMAGE
     if event:
         if PLAYER == 1 and event.widget["text"] == "-":
             event.widget["image"] = x_mark
@@ -37,6 +59,13 @@ def tile_clicked(event):
             event.widget["image"] = o_mark
             event.widget["text"] = "o"
             PLAYER -= 1
+            screenshot()
+        elif PLAYER == 3 and event.widget["text"] == "-":
+            event.widget["image"] = PLAYER_IMAGE
+            if PLAYER_IMAGE == x_mark:
+                event.widget["text"] = "x"
+            else:
+                event.widget["text"] = "o"
             screenshot()
     played_tiles = []
     for widget in main_w.winfo_children()[:9]:
@@ -56,10 +85,112 @@ def tile_clicked(event):
                       "036": f"{played_tiles[0]}{played_tiles[3]}{played_tiles[6]}",
                       "147": f"{played_tiles[1]}{played_tiles[4]}{played_tiles[7]}",
                       }
+    if event and PLAYER == 3:
+        strength = [50, 100]
+        strength = random.choice(strength)
+        print(strength)
+        print(TURN_NUM)
+        if TURN_NUM == 2:
+            if AI_IMAGE == x_mark:
+                for key in win_conditions:
+                    if win_conditions[key].count("o") == 2:
+                        for x in range(0, 3):
+                            if win_conditions[key][x] == "-":
+                                main_w.winfo_children()[int(list(key)[x])]["image"] = x_mark
+                                main_w.winfo_children()[int(list(key)[x])]["text"] = "x"
+                            elif win_conditions[key][x] == "x":
+                                for y in range(0, 100):
+                                    ai_tile = random.choice(main_w.winfo_children()[:9])
+                                    if ai_tile["text"] == "-":
+                                        if AI_IMAGE == x_mark:
+                                            if ai_tile["text"] == "-":
+                                                ai_tile["image"] = x_mark
+                                                ai_tile["text"] = "x"
+                                                break
+                                        else:
+                                            if ai_tile["text"] == "-":
+                                                ai_tile["image"] = o_mark
+                                                ai_tile["text"] = "o"
+                                                break
+                    elif win_conditions[key].count("o") == 1:
+                        ai_tile = random.choice(main_w.winfo_children()[:9])
+                        if ai_tile["text"] == "-":
+                            if AI_IMAGE == x_mark:
+                                if ai_tile["text"] == "-":
+                                    ai_tile["image"] = x_mark
+                                    ai_tile["text"] = "x"
+                                    break
+                            else:
+                                if ai_tile["text"] == "-":
+                                    ai_tile["image"] = o_mark
+                                    ai_tile["text"] = "o"
+                                    break
+            else:
+                for key in win_conditions:
+                    if win_conditions[key].count("x") == 2:
+                        for x in range(0, 3):
+                            if win_conditions[key][x] == "-":
+                                main_w.winfo_children()[int(list(key)[x])]["image"] = o_mark
+                                main_w.winfo_children()[int(list(key)[x])]["text"] = "o"
+                            elif win_conditions[key][x] == "o":
+                                for y in range(0, 100):
+                                    ai_tile = random.choice(main_w.winfo_children()[:9])
+                                    if ai_tile["text"] == "-":
+                                        if AI_IMAGE == x_mark:
+                                            if ai_tile["text"] == "-":
+                                                ai_tile["image"] = x_mark
+                                                ai_tile["text"] = "x"
+                                                break
+                                        else:
+                                            if ai_tile["text"] == "-":
+                                                ai_tile["image"] = o_mark
+                                                ai_tile["text"] = "o"
+                                                break
+        elif strength == 50 or TURN_NUM < 2:
+            for x in range(0, 100):
+                ai_tile = random.choice(main_w.winfo_children()[:9])
+                if ai_tile["text"] == "-":
+                    if AI_IMAGE == x_mark:
+                        if ai_tile["text"] == "-":
+                            ai_tile["image"] = x_mark
+                            ai_tile["text"] = "x"
+                            break
+                    else:
+                        if ai_tile["text"] == "-":
+                            ai_tile["image"] = o_mark
+                            ai_tile["text"] = "o"
+                            break
+        elif strength == 100 and TURN_NUM > 2:
+            if AI_IMAGE == x_mark:
+                for key in win_conditions:
+                    if win_conditions[key].count("o") == 2:
+                        for x in range(0, 3):
+                            if win_conditions[key][x] == "-":
+                                main_w.winfo_children()[int(list(key)[x])]["image"] = x_mark
+                                main_w.winfo_children()[int(list(key)[x])]["text"] = "x"
+            else:
+                for key in win_conditions:
+                    if win_conditions[key].count("x") == 2:
+                        for x in range(0, 3):
+                            if win_conditions[key][x] == "-":
+                                main_w.winfo_children()[int(list(key)[x])]["image"] = o_mark
+                                main_w.winfo_children()[int(list(key)[x])]["text"] = "o"
+    played_tiles = []
+    for widget in main_w.winfo_children()[:9]:
+        played_tiles.append(widget["text"])
+    win_conditions = {"012": f"{played_tiles[0]}{played_tiles[1]}{played_tiles[2]}",
+                      "345": f"{played_tiles[3]}{played_tiles[4]}{played_tiles[5]}",
+                      "678": f"{played_tiles[6]}{played_tiles[7]}{played_tiles[8]}",
+                      "642": f"{played_tiles[6]}{played_tiles[4]}{played_tiles[2]}",
+                      "840": f"{played_tiles[8]}{played_tiles[4]}{played_tiles[0]}",
+                      "258": f"{played_tiles[2]}{played_tiles[5]}{played_tiles[8]}",
+                      "036": f"{played_tiles[0]}{played_tiles[3]}{played_tiles[6]}",
+                      "147": f"{played_tiles[1]}{played_tiles[4]}{played_tiles[7]}",
+                      }
     for key in win_conditions:
         if win_conditions[key].count("x") == 3:
-            PLAYER = 3
-            main_w.winfo_children()[-3].grid()
+            PLAYER = 4
+            main_w.winfo_children()[-5].grid()
             for index in list(key):
                 main_w.winfo_children()[:9][int(index)]["image"] = x_mark_won
                 for x in range(0, 9):
@@ -69,8 +200,8 @@ def tile_clicked(event):
                         elif main_w.winfo_children()[:9][x]["text"] == "o":
                             main_w.winfo_children()[:9][x]["image"] = o_mark_lost
         elif win_conditions[key].count("o") == 3:
-            PLAYER = 4
-            main_w.winfo_children()[-3].grid()
+            PLAYER = 5
+            main_w.winfo_children()[-5].grid()
             for index in list(key):
                 main_w.winfo_children()[:9][int(index)]["image"] = o_mark_won
                 for x in range(0, 9):
@@ -80,18 +211,20 @@ def tile_clicked(event):
                         elif main_w.winfo_children()[:9][x]["text"] == "o":
                             main_w.winfo_children()[:9][x]["image"] = o_mark_lost
     if "-" not in played_tiles:
-        main_w.winfo_children()[-3].grid()
-        for x in range(0, 9):
-            if main_w.winfo_children()[:9][x]["text"] == "x":
-                main_w.winfo_children()[:9][x]["image"] = x_mark_draw
-            elif main_w.winfo_children()[:9][x]["text"] == "o":
-                main_w.winfo_children()[:9][x]["image"] = o_mark_draw
+        main_w.winfo_children()[9].grid()
+        main_w.winfo_children()[10].grid()
+        if PLAYER <= 3:  # was overwriting wins with draw, if the last move was a win_move
+            for x in range(0, 9):
+                if main_w.winfo_children()[:9][x]["text"] == "x":
+                    main_w.winfo_children()[:9][x]["image"] = x_mark_draw
+                elif main_w.winfo_children()[:9][x]["text"] == "o":
+                    main_w.winfo_children()[:9][x]["image"] = o_mark_draw
 
 
 def screenshot():
-    global GAME_NUM, TURN_NUM
+    global GAME_NUM, TURN_NUM, PLAYER
     try:
-        os.mkdir(path=f"C:/Users/Pampam/PycharmProjects/StartProject2/history/Game{GAME_NUM}")
+        os.mkdir(path=f"history/Game{GAME_NUM}")
     except FileExistsError:
         pass
 
@@ -111,6 +244,13 @@ def hide_tiles():
         widget["text"] = "-"
         widget.bind("<ButtonPress-1>", tile_clicked)
         widget.grid_remove()
+    for widget in main_w.winfo_children()[9:12]:
+        widget.grid_remove()
+
+
+def menu():
+    for widget in main_w.winfo_children()[10:]:
+        widget.grid()
 
 
 main_w = Tk()
@@ -129,6 +269,7 @@ start_icon = tkinter.PhotoImage(file="media/start_450x450.png")
 history_icon = tkinter.PhotoImage(file="media/history_55x55.png")
 versus_icon = tkinter.PhotoImage(file="media/vs_ai_155x96.png")
 replay_icon = tkinter.PhotoImage(file="media/replay_130x130.png")
+go_back_icon = tkinter.PhotoImage(file="media/go_back_130x130.png")
 # main window - setup, size, centering experiments #
 # Was trying to do somewhat, flexible resolution for main_window, to adapt padding and window size for
 # different screen resolutions, but didn't work out as I wanted. Leaving fixed resolution and padding.
@@ -229,6 +370,33 @@ tile_33.grid(row=2,
              column=2,
              )
 hide_tiles()
+# replay button #
+replay_button = Button(main_w,
+                       image=replay_icon,
+                       highlightthickness=0,
+                       border=0,
+                       relief=tkinter.RIDGE,
+                       command=lambda: (hide_tiles(), screenshot()),
+                       )
+replay_button.grid(
+    row=1,
+    column=3,
+    padx=(15, 0)
+)
+replay_button.grid_remove()
+# go back button #
+go_back_button = Button(main_w,
+                        image=go_back_icon,
+                        highlightthickness=0,
+                        border=0,
+                        relief=tkinter.RIDGE,
+                        command=lambda: (hide_tiles(), screenshot(), menu())
+                        )
+go_back_button.grid(row=2,
+                    column=3,
+                    padx=(15, 0),
+                    )
+go_back_button.grid_remove()
 # start button #
 start_button = Button(main_w,
                       image=start_icon,
@@ -241,20 +409,6 @@ start_button.grid(row=0,
                   columnspan=2,
                   padx=(30, 30),
                   )
-# replay button #
-replay_button = Button(main_w,
-                       image=replay_icon,
-                       highlightthickness=0,
-                       border=0,
-                       relief=tkinter.RIDGE,
-                       command=lambda: (hide_tiles(), screenshot(), start_game()),
-                       )
-replay_button.grid(
-    row=1,
-    column=3,
-    padx=(15, 0)
-)
-replay_button.grid_remove()
 # history button #
 history_button = Button(main_w,
                         compound="right",
@@ -268,7 +422,7 @@ history_button = Button(main_w,
 history_button.grid(row=1,
                     column=0,
                     sticky="w",
-                    pady=25,
+                    pady=(10, 0),
                     )
 # versus button #
 versus_button = Button(main_w,
@@ -276,11 +430,12 @@ versus_button = Button(main_w,
                        highlightthickness=0,
                        border=0,
                        relief=tkinter.RIDGE,
+                       command=lambda: start_game(ai=True),
                        )
 versus_button.grid(row=1,
                    column=1,
                    sticky="e",
-                   pady=10,
+                   pady=(10, 0),
+                   padx=(25, 0),
                    )
-
 main_w.mainloop()
