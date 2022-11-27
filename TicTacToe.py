@@ -3,9 +3,11 @@ from tkinter import *
 import random
 import pyautogui
 import os
+from tkinter import ttk
 
 global PLAYER, PLAYER_IMAGE, AI_IMAGE  # PLAYER = 4: X-win, PLAYER = 5: O-win.
 global GAME_NUM, TURN_NUM
+history_list = []
 
 
 def start_game(ai=False):
@@ -264,10 +266,10 @@ def screenshot():
     TURN_NUM += 1
     pyautogui.screenshot(f"history/Game{GAME_NUM}/turn{TURN_NUM}.png",
                          region=(
-                             main_w.winfo_rootx(),
-                             main_w.winfo_rooty(),
-                             main_w.winfo_width(),
-                             main_w.winfo_height()
+                             main_w.winfo_rootx() + 136.5,
+                             main_w.winfo_rooty() + 40,
+                             525,
+                             520,
                          ))
 
 
@@ -282,8 +284,63 @@ def hide_tiles():
 
 
 def menu():
-    for widget in main_w.winfo_children()[10:]:
+    for widget in main_w.winfo_children()[10:14]:
         widget.grid()
+
+
+def history():
+    main_w.config(padx=0)
+    for widget in main_w.winfo_children()[10:14]:
+        widget.grid_remove()
+    played = [int(element.strip("Game")) for element in os.listdir('history')]  # all games
+    played.sort()
+    game_index = played[-1]
+    all_turns = os.listdir(f"history/Game{game_index}")
+    for index in all_turns:
+        path = f"history/Game{played[0]}/{index}"
+        history_list.append(tkinter.PhotoImage(file=path))
+    print(history_list)
+    history_label = Canvas(main_w,
+                           width=525,
+                           height=520)
+
+    history_label.grid(row=0,
+                       column=1)
+    go_back_history = Button(main_w,
+                             image=go_back_icon,
+                             highlightthickness=0,
+                             border=0,
+                             relief=tkinter.RIDGE,
+                             )
+    go_back_history.grid(row=0,
+                         column=2,
+                         sticky="se")
+    history_label.create_image(0, 0, image=history_list[0], anchor=NW)
+    go_back_history.lower()
+    style = ttk.Style()
+    style.configure("TCombobox", fieldbackground="white", foreground="black",
+                    background="white", highlightthickness=0, border=0, highlightcolor="white")
+    choose_game = ttk.Combobox(main_w,
+                               width=15,
+                               values=["test", "test1", "test"],
+                               justify="right",
+                               state="readonly",
+                               )
+    choose_game.bind("<<ComboboxSelected>>", lambda e: main_w.focus())
+    choose_game.current(0)
+    choose_game.grid(row=0,
+                     column=2,
+                     sticky="n",
+                     )
+    back_scroll_button = Button(main_w,
+                             image=go_back_icon,
+                             highlightthickness=0,
+                             border=0,
+                             relief=tkinter.RIDGE,
+                             )
+    back_scroll_button.grid(row=0,
+                            column=0,
+                            sticky="w")
 
 
 main_w = Tk()
@@ -451,6 +508,7 @@ history_button = Button(main_w,
                         highlightthickness=0,
                         border=0,
                         relief=tkinter.RIDGE,
+                        command=history,
                         )
 history_button.grid(row=1,
                     column=0,
