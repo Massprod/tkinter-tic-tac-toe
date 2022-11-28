@@ -134,126 +134,62 @@ def ai_brain(win_conditions):
     global PLAYER, TURN_NUM
     if PLAYER == 3:
         PLAYER = 6
-        strength = [100, 50]
-        strength = random.choice(strength)
-        if TURN_NUM == 2:
-            if AI_IMAGE == x_mark:
-                for key in win_conditions:
-                    if win_conditions[key].count("o") == 2:
-                        for x in range(0, 3):
-                            if win_conditions[key][x] == "-":
-                                main_w.winfo_children()[int(list(key)[x])]["image"] = x_mark
-                                main_w.winfo_children()[int(list(key)[x])]["text"] = "x"
-                                return
-                            elif win_conditions[key][x] == "x":
-                                for y in range(0, 100):
-                                    ai_tile = random.choice(main_w.winfo_children()[:9])
-                                    if ai_tile["text"] == "-":
-                                        if AI_IMAGE == x_mark:
-                                            if ai_tile["text"] == "-":
-                                                ai_tile["image"] = x_mark
-                                                ai_tile["text"] = "x"
-                                                return
-                                        else:
-                                            if ai_tile["text"] == "-":
-                                                ai_tile["image"] = o_mark
-                                                ai_tile["text"] = "o"
-                                                return
-                    elif win_conditions[key].count("o") == 1:
-                        for _ in range(0, 100):
-                            ai_tile = random.choice(main_w.winfo_children()[:9])
-                            if ai_tile["text"] == "-":
-                                if AI_IMAGE == x_mark:
-                                    if ai_tile["text"] == "-":
-                                        ai_tile["image"] = x_mark
-                                        ai_tile["text"] = "x"
-                                        return
-                                else:
-                                    if ai_tile["text"] == "-":
-                                        ai_tile["image"] = o_mark
-                                        ai_tile["text"] = "o"
-                                        return
-            else:
-                for key in win_conditions:
-                    if win_conditions[key].count("x") == 2:
-                        for x in range(0, 3):
-                            if win_conditions[key][x] == "-":
-                                main_w.winfo_children()[int(list(key)[x])]["image"] = o_mark
-                                main_w.winfo_children()[int(list(key)[x])]["text"] = "o"
-                                return
-                            elif win_conditions[key][x] == "o":
-                                for y in range(0, 100):
-                                    ai_tile = random.choice(main_w.winfo_children()[:9])
-                                    if ai_tile["text"] == "-":
-                                        if AI_IMAGE == x_mark:
-                                            if ai_tile["text"] == "-":
-                                                ai_tile["image"] = x_mark
-                                                ai_tile["text"] = "x"
-                                                return
-                                        else:
-                                            if ai_tile["text"] == "-":
-                                                ai_tile["image"] = o_mark
-                                                ai_tile["text"] = "o"
-                                                return
-        elif strength == 50 or TURN_NUM < 2:
-            for _ in range(0, 100):
-                ai_tile = random.choice(main_w.winfo_children()[:9])
-                if ai_tile["text"] == "-":
-                    if AI_IMAGE == x_mark:
-                        if ai_tile["text"] == "-":
-                            ai_tile["image"] = x_mark
-                            ai_tile["text"] = "x"
+        if AI_IMAGE == x_mark:
+            for key in win_conditions:
+                if win_conditions[key].count("x") == 2:
+                    for x in range(0, 3):
+                        if win_conditions[key][x] == "-":
+                            main_w.winfo_children()[int(list(key)[x])]["image"] = x_mark
+                            main_w.winfo_children()[int(list(key)[x])]["text"] = "x"
                             return
-                    else:
-                        if ai_tile["text"] == "-":
-                            ai_tile["image"] = o_mark
-                            ai_tile["text"] = "o"
+                elif win_conditions[key].count("o") == 2:
+                    for x in range(0, 3):
+                        if win_conditions[key][x] == "-":
+                            main_w.winfo_children()[int(list(key)[x])]["image"] = x_mark
+                            main_w.winfo_children()[int(list(key)[x])]["text"] = "x"
                             return
-        if strength == 100:
-            if AI_IMAGE == x_mark:
-                for key in win_conditions:
-                    if win_conditions[key].count("o") == 2:
-                        for x in range(0, 3):
-                            if win_conditions[key][x] == "-":
-                                main_w.winfo_children()[int(list(key)[x])]["image"] = x_mark
-                                main_w.winfo_children()[int(list(key)[x])]["text"] = "x"
-                                return
-                    elif win_conditions[key].count("o") == 1:
-                        for _ in range(0, 100):
-                            ai_tile = random.choice(main_w.winfo_children()[:9])
-                            if ai_tile["text"] == "-":
-                                if AI_IMAGE == x_mark:
-                                    if ai_tile["text"] == "-":
-                                        ai_tile["image"] = x_mark
-                                        ai_tile["text"] = "x"
-                                        return
-                                else:
-                                    if ai_tile["text"] == "-":
-                                        ai_tile["image"] = o_mark
-                                        ai_tile["text"] = "o"
-                                        return
             else:
-                for key in win_conditions:
-                    if win_conditions[key].count("x") == 2:
-                        for x in range(0, 3):
-                            if win_conditions[key][x] == "-":
-                                main_w.winfo_children()[int(list(key)[x])]["image"] = o_mark
-                                main_w.winfo_children()[int(list(key)[x])]["text"] = "o"
-                                return
-                    elif win_conditions[key].count("o") == 1:
-                        for _ in range(0, 100):
-                            ai_tile = random.choice(main_w.winfo_children()[:9])
+                for _ in range(0, 100):
+                    ai_tile = random.choice(main_w.winfo_children()[:9])
+                    if ai_tile["text"] == "-":
+                        if AI_IMAGE == x_mark:
                             if ai_tile["text"] == "-":
-                                if AI_IMAGE == x_mark:
-                                    if ai_tile["text"] == "-":
-                                        ai_tile["image"] = x_mark
-                                        ai_tile["text"] = "x"
-                                        return
-                                else:
-                                    if ai_tile["text"] == "-":
-                                        ai_tile["image"] = o_mark
-                                        ai_tile["text"] = "o"
-                                        return
+                                ai_tile["image"] = x_mark
+                                ai_tile["text"] = "x"
+                                return
+                        else:
+                            if ai_tile["text"] == "-":
+                                ai_tile["image"] = o_mark
+                                ai_tile["text"] = "o"
+                                return
+        else:
+            for key in win_conditions:
+                if win_conditions[key].count("o") == 2:
+                    for x in range(0, 3):
+                        if win_conditions[key][x] == "-":
+                            main_w.winfo_children()[int(list(key)[x])]["image"] = o_mark
+                            main_w.winfo_children()[int(list(key)[x])]["text"] = "o"
+                            return
+                elif win_conditions[key].count("x") == 2:
+                    for x in range(0, 3):
+                        if win_conditions[key][x] == "-":
+                            main_w.winfo_children()[int(list(key)[x])]["image"] = o_mark
+                            main_w.winfo_children()[int(list(key)[x])]["text"] = "o"
+                            return
+            else:
+                for _ in range(0, 100):
+                    ai_tile = random.choice(main_w.winfo_children()[:9])
+                    if ai_tile["text"] == "-":
+                        if AI_IMAGE == x_mark:
+                            if ai_tile["text"] == "-":
+                                ai_tile["image"] = x_mark
+                                ai_tile["text"] = "x"
+                                return
+                        else:
+                            if ai_tile["text"] == "-":
+                                ai_tile["image"] = o_mark
+                                ai_tile["text"] = "o"
+                                return
 
 
 def screenshot():
