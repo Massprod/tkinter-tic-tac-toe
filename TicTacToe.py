@@ -231,7 +231,7 @@ def menu():
     history_choose_game.configure(values=[])
     # deleting all games from history which was created from screenshot #
     # btw it's not deleting shots which was made and program closed #
-    [os.listdir(f"history/{element}") if len(os.listdir(f"history/{element}")) > 4
+    [os.listdir(f"history/{element}") if len(os.listdir(f"history/{element}")) > 3
      else shutil.rmtree(f"history/{element}") for element in os.listdir("history")]
     # changed protocol line: 331#
 
@@ -245,24 +245,31 @@ def history():
         for widget in main_w.winfo_children():
             widget.grid_remove()
         main_w.config(padx=75)
+        # (maybe) change it for lists, one list for every window option #
         history_go_back_button.grid()
         history_label.grid()
         history_choose_game.grid()
         history_prev_turn_button.grid()
         history_next_turn_button.grid()
+        history_delete_button.grid()
+
         played = [int(element.strip("Game")) for element in os.listdir('history')]  # all games
         played.sort()
         HISTORY_INDEX = played[-1]  # last game played
         all_turns = os.listdir(f"history/Game{HISTORY_INDEX}")
+        all_turns = [int(name.strip("turn.png")) for name in all_turns]
+        all_turns.sort()
         HISTORY_TURN = 0
         # trash collector deletes created photos if they're not stored out of function
         for index in all_turns:
-            path = f"history/Game{HISTORY_INDEX}/{index}"
+            path = f"history/Game{HISTORY_INDEX}/turn{index}.png"
             history_list.append(tkinter.PhotoImage(file=path))
         history_label.create_image(0, 0, image=history_list[HISTORY_TURN], anchor=NW)
         history_choose_game.configure(values=[str(f"Game: {value}") for value in played])
         history_choose_game.set(f"Game: {played[-1]}")
     except FileNotFoundError:
+        menu()
+    except IndexError:
         menu()
 
 
@@ -287,12 +294,29 @@ def history_game_chosen():
     global HISTORY_INDEX, HISTORY_TURN
     HISTORY_INDEX = (history_choose_game.get()).strip("Game: ")
     all_turns = os.listdir(f"history/Game{HISTORY_INDEX}")
+    all_turns = [int(name.strip("turn.png")) for name in all_turns]
+    all_turns.sort()  # mb I could sort with strings, search it later
     HISTORY_TURN = 0
     history_list.clear()
     for index in all_turns:
-        path = f"history/Game{HISTORY_INDEX}/{index}"
+        path = f"history/Game{HISTORY_INDEX}/turn{index}.png"
         history_list.append(tkinter.PhotoImage(file=path))
     history_label.create_image(0, 0, image=history_list[HISTORY_TURN], anchor=NW)
+
+
+def delete_history_game_chosen():
+    global HISTORY_INDEX
+    game_indexes = [int(element.strip("Game")) for element in os.listdir(f"history")]
+    game_indexes.sort()
+    if HISTORY_INDEX == game_indexes[-1]:
+        shutil.rmtree(f"history/Game{HISTORY_INDEX}")
+    else:
+        shutil.rmtree(f"history/Game{HISTORY_INDEX}")
+        game_indexes.pop(int(HISTORY_INDEX))
+        new_indexes = [index - 1 if index > int(HISTORY_INDEX) else index for index in game_indexes]
+        for element in new_indexes:
+            os.replace(f"history/{os.listdir('history')[element]}", f"history/Game{str(element)}")
+    history()
 
 
 main_w = Tk()
@@ -314,6 +338,7 @@ replay_icon = tkinter.PhotoImage(file="media/replay_130x130.png")
 go_back_icon = tkinter.PhotoImage(file="media/go_back_130x130.png")
 prev_turn_icon = tkinter.PhotoImage(file="media/prev_turn_100x100.png")
 next_turn_icon = tkinter.PhotoImage(file="media/next_turn_100x100.png")
+delete_icon = tkinter.PhotoImage(file="media/delete_icon_50x50.png")
 # main window - setup, size, centering experiments #
 # Was trying to do somewhat, flexible resolution for main_window, to adapt padding and window size for
 # different screen resolutions, but didn't work out as I wanted. Leaving fixed resolution and padding.
@@ -504,7 +529,8 @@ history_go_back_button = Button(main_w,
                                 )
 history_go_back_button.grid(row=0,
                             column=2,
-                            sticky="s")
+                            sticky="s",
+                            )
 history_go_back_button.grid_remove()
 # History Combobox #
 style = ttk.Style()
@@ -532,7 +558,8 @@ history_prev_turn_button = Button(main_w,
                                   command=lambda: history_next_turn(back=True),
                                   )
 history_prev_turn_button.grid(row=0,
-                              column=0, )
+                              column=0,
+                              )
 history_prev_turn_button.grid_remove()
 # History: next turn button #
 history_next_turn_button = Button(main_w,
@@ -544,7 +571,20 @@ history_next_turn_button = Button(main_w,
                                   )
 history_next_turn_button.grid(row=0,
                               column=2,
-                              sticky="w", )
+                              sticky="w",
+                              )
 history_next_turn_button.grid_remove()
-
+# History: delete game button #
+history_delete_button = Button(main_w,
+                               image=delete_icon,
+                               highlightthickness=0,
+                               border=0,
+                               relief=tkinter.RIDGE,
+                               command=delete_history_game_chosen,
+                               )
+history_delete_button.grid(row=0,
+                           column=0,
+                           sticky="sw",
+                           )
+history_delete_button.grid_remove()
 main_w.mainloop()
