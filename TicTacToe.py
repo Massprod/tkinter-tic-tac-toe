@@ -305,7 +305,7 @@ def history_game_chosen():
 
 
 def delete_history_game_chosen():
-    global HISTORY_INDEX
+    global HISTORY_INDEX, HISTORY_TURN
     game_indexes = [int(element.strip("Game")) for element in os.listdir(f"history")]
     game_indexes.sort()
     if HISTORY_INDEX == game_indexes[-1]:
@@ -316,6 +316,7 @@ def delete_history_game_chosen():
         new_indexes = [index - 1 if index > int(HISTORY_INDEX) else index for index in game_indexes]
         for element in new_indexes:
             os.replace(f"history/{os.listdir('history')[element]}", f"history/Game{str(element)}")
+    history_list.clear()  # clearing lis of images, otherwise they will append another game
     history()
 
 
