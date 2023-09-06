@@ -17,19 +17,27 @@ global GAME_NUM, TURN_NUM, HISTORY_TURN, HISTORY_INDEX
 # TURN_NUM -> current game Turn.
 # HISTORY_TURN -> displayed Turn of chosen Game from History.
 # HISTORY_INDEX -> index of focused game from history drop_down menu.
-# Tile board widgets => 0 -> 8 inclusive.
+# Tiles board widgets => 0 -> 8 inclusive.
 
 history_list: list[PhotoImage] = []
 main_w_background: str = '#FFFFFF'
 
 
-def start_game(ai=False) -> None:
+def start_game(pc=False) -> None:
+    """
+    Starting game with deletion of every widget,
+    and placing Tiles board on a screen.
+    Both game modes randomly assign player marks.
+
+    :param pc: setups game against pc_opponent.
+    :return:
+    """
     global PLAYER, GAME_NUM, TURN_NUM, PLAYER_IMAGE, IF_IMAGE
     try:
-        played: list[int] = sorted([int(element.strip("Game")) for element in os.listdir('history')])
+        played: list[int] = [int(element.strip("Game")) for element in os.listdir('history')]
         GAME_NUM = 1
         if played:
-            GAME_NUM = played[-1] + 1
+            GAME_NUM = max(played) + 1
         else:
             os.mkdir(path=f"history/Game{GAME_NUM}")
         PLAYER = 0
@@ -37,7 +45,7 @@ def start_game(ai=False) -> None:
         GAME_NUM = 1
         os.mkdir(path="history")
         PLAYER = 0
-    if not ai:
+    if not pc:
         TURN_NUM = 0
         PLAYER = random.randint(1, 2)
         # widgets 0 -> 8 inclusive, tiles.
@@ -61,7 +69,7 @@ def start_game(ai=False) -> None:
         }
         PLAYER_IMAGE = random.choice(list(marks.keys()))
         IF_IMAGE = marks[PLAYER_IMAGE]
-        replay_button.configure(command=lambda: (hide_tiles(), screenshot(), start_game(ai=True)))
+        replay_button.configure(command=lambda: (hide_tiles(), screenshot(), start_game(pc=True)))
 
 
 def win_check() -> dict[str, str] | None:
@@ -202,7 +210,7 @@ def if_brain(cur_state: dict[str, str]) -> None:
                             ai_tile["text"] = "x"
                             return
             # Any random empty tile.
-            for _ in range(0, 100):
+            for _ in range(0, 1000):
                 ai_tile = random.choice(all_tiles)
                 if ai_tile["text"] == "-":
                     ai_tile["image"] = x_mark
@@ -225,7 +233,7 @@ def if_brain(cur_state: dict[str, str]) -> None:
                             ai_tile["image"] = o_mark
                             ai_tile["text"] = "o"
                             return
-            for _ in range(0, 100):
+            for _ in range(0, 1000):
                 ai_tile = random.choice(all_tiles)
                 if ai_tile["text"] == "-":
                     ai_tile["image"] = o_mark
@@ -465,9 +473,9 @@ main_w.config(
     pady=45,
     background=main_w_background,
 )
-main_w.protocol("WM_DELETE_WINDOW", lambda: (menu(), main_w.destroy()))
-# Tile buttons setup.
-# Same 9 tiles, and using main window children widgets 0 -> 8 inclusive.
+main_w.protocol("WM_DELETE_WINDOW", lambda: (main_w.destroy()))
+# Tiles board setup.
+# Same 9 tiles as buttons, and using main window children widgets 0 -> 8 inclusive.
 # First row.
 tile_11: Button = Button(
     main_w,
@@ -663,7 +671,7 @@ versus_button: Button = Button(
     background=main_w_background,
     activebackground=main_w_background,
     relief=tkinter.RIDGE,
-    command=lambda: start_game(ai=True),
+    command=lambda: start_game(pc=True),
 )
 versus_button.grid(
     row=1,
