@@ -1,14 +1,16 @@
-import shutil
-import tkinter
-from tkinter import *
-import random
-import pyautogui
 import os
+import shutil
+import random
+import tkinter
+import pyautogui
+from tkinter import *
 from tkinter import ttk
 
-global PLAYER, PLAYER_IMAGE, AI_IMAGE  # PLAYER = 4: X-win, PLAYER = 5: O-win.
+
+global PLAYER, PLAYER_IMAGE, AI_IMAGE  # PLAYER == 4: X-win, PLAYER == 5: O-win.
 global GAME_NUM, TURN_NUM, HISTORY_TURN, HISTORY_INDEX
-history_list = []
+history_list: list[PhotoImage] = []
+main_w_background: str = '#FFFFFF'
 
 
 def start_game(ai=False):
@@ -222,18 +224,22 @@ def hide_tiles():
 
 def menu():
     main_w.config(padx=145,
-                  pady=45, )
+                  pady=45,
+                  )
     for widget in main_w.winfo_children():
         widget.grid_remove()
     for widget in main_w.winfo_children()[10:14]:
         widget.grid()
     history_list.clear()
     history_choose_game.configure(values=[])
-    # deleting all games from history which was created from screenshot #
-    # btw it's not deleting shots which was made and program closed #
-    [os.listdir(f"history/{element}") if len(os.listdir(f"history/{element}")) > 3
-     else shutil.rmtree(f"history/{element}") for element in os.listdir("history")]
-    # changed protocol line: 331#
+    # If History exist, delete every game with less than 3 steps.
+    # 1 screenshot is always empty board. So it's <= 3.
+    try:
+        for game in os.listdir(f'history'):
+            if len(os.listdir(f'history/{game}')) <= 3:
+                shutil.rmtree(f'history/{game}')
+    except FileNotFoundError:
+        pass
 
 
 def history():
@@ -301,291 +307,409 @@ def history_game_chosen():
     for index in all_turns:
         path = f"history/Game{HISTORY_INDEX}/turn{index}.png"
         history_list.append(tkinter.PhotoImage(file=path))
-    history_label.create_image(0, 0, image=history_list[HISTORY_TURN], anchor=NW)
+    # history_list is holding all created images.
+    # So it will show them correct even if delete directory or images from directory.
+    # But, if we will try to choose same Game again when directory empty or deleted,
+    #  then it will corrupt HISTORY_TURN and raise directory not_found.
+    # So if all_turns is empty then directory doesn't exist.
+    if history_list:
+        history_label.create_image(0, 0, image=history_list[HISTORY_TURN], anchor=NW)
+    else:
+        delete_history_game_chosen()
 
 
 def delete_history_game_chosen():
     global HISTORY_INDEX, HISTORY_TURN
-    game_indexes = [int(element.strip("Game")) for element in os.listdir(f"history")]
-    game_indexes.sort()
+    # Needs to be sorted, otherwise we will get listdir with dict ordering.
+    # And cases like 10 -> 9 will try to rename 10 to 9 when it's still not changed to 8.
+    game_indexes = sorted([int(element.strip("Game")) for element in os.listdir(f"history")])
     if HISTORY_INDEX == game_indexes[-1]:
         shutil.rmtree(f"history/Game{HISTORY_INDEX}")
     else:
         shutil.rmtree(f"history/Game{HISTORY_INDEX}")
-        game_indexes.pop(int(HISTORY_INDEX))
-        new_indexes = [index - 1 if index > int(HISTORY_INDEX) else index for index in game_indexes]
-        for element in new_indexes:
-            os.replace(f"history/{os.listdir('history')[element]}", f"history/Game{str(element)}")
-    history_list.clear()  # clearing lis of images, otherwise they will append another game
+        for index in game_indexes:
+            if index > int(HISTORY_INDEX):
+                os.rename(f'history/Game{index}', f'history/Game{index - 1}')
+    history_list.clear()  # clearing list of images, otherwise they will append another game history
     history()
 
 
+# Main window.
 main_w = Tk()
-# media zone #
-tile = tkinter.PhotoImage(file="media/tile_170x170.png.")
-x_mark = tkinter.PhotoImage(file="media/x_mark_170x170.png")
-x_mark_won = tkinter.PhotoImage(file="media/x_mark_170x170_win.png")
-x_mark_lost = tkinter.PhotoImage(file="media/x_mark_170x170_lose.png")
-x_mark_draw = tkinter.PhotoImage(file="media/x_mark_170x170_draw.png")
-o_mark = tkinter.PhotoImage(file="media/o_mark_170x170.png")
-o_mark_won = tkinter.PhotoImage(file="media/o_mark_170x170_win.png")
-o_mark_lost = tkinter.PhotoImage(file="media/o_mark_170x170_lose.png")
-o_mark_draw = tkinter.PhotoImage(file="media/o_mark_170x170_draw.png")
-icon = tkinter.PhotoImage(file="media/ttt_icon.png")
-start_icon = tkinter.PhotoImage(file="media/start_450x450.png")
-history_icon = tkinter.PhotoImage(file="media/history_55x55.png")
-versus_icon = tkinter.PhotoImage(file="media/vs_ai_155x96.png")
-replay_icon = tkinter.PhotoImage(file="media/replay_130x130.png")
-go_back_icon = tkinter.PhotoImage(file="media/go_back_130x130.png")
-prev_turn_icon = tkinter.PhotoImage(file="media/prev_turn_100x100.png")
-next_turn_icon = tkinter.PhotoImage(file="media/next_turn_100x100.png")
-delete_icon = tkinter.PhotoImage(file="media/delete_icon_50x50.png")
-# main window - setup, size, centering experiments #
-# Was trying to do somewhat, flexible resolution for main_window, to adapt padding and window size for
-# different screen resolutions, but didn't work out as I wanted. Leaving fixed resolution and padding.
+# Media zone
+tile: PhotoImage = tkinter.PhotoImage(file="media/tile_170x170.png.")
+x_mark: PhotoImage = tkinter.PhotoImage(file="media/x_mark_170x170.png")
+x_mark_won: PhotoImage = tkinter.PhotoImage(file="media/x_mark_170x170_win.png")
+x_mark_lost: PhotoImage = tkinter.PhotoImage(file="media/x_mark_170x170_lose.png")
+x_mark_draw: PhotoImage = tkinter.PhotoImage(file="media/x_mark_170x170_draw.png")
+o_mark: PhotoImage = tkinter.PhotoImage(file="media/o_mark_170x170.png")
+o_mark_won: PhotoImage = tkinter.PhotoImage(file="media/o_mark_170x170_win.png")
+o_mark_lost: PhotoImage = tkinter.PhotoImage(file="media/o_mark_170x170_lose.png")
+o_mark_draw: PhotoImage = tkinter.PhotoImage(file="media/o_mark_170x170_draw.png")
+icon: PhotoImage = tkinter.PhotoImage(file="media/ttt_icon.png")
+start_icon: PhotoImage = tkinter.PhotoImage(file="media/start_450x450.png")
+history_icon: PhotoImage = tkinter.PhotoImage(file="media/history_55x55.png")
+versus_icon: PhotoImage = tkinter.PhotoImage(file="media/vs_ai_155x96.png")
+replay_icon: PhotoImage = tkinter.PhotoImage(file="media/replay_130x130.png")
+go_back_icon: PhotoImage = tkinter.PhotoImage(file="media/go_back_130x130.png")
+prev_turn_icon: PhotoImage = tkinter.PhotoImage(file="media/prev_turn_100x100.png")
+next_turn_icon: PhotoImage = tkinter.PhotoImage(file="media/next_turn_100x100.png")
+delete_icon: PhotoImage = tkinter.PhotoImage(file="media/delete_icon_50x50.png")
+# Main window - setup.
 main_w.update_idletasks()
-main_w_width = int(main_w.winfo_screenwidth() * 0.45)
-main_w_height = int(main_w.winfo_screenheight() * 0.6)
-main_w_start_x = int((main_w.winfo_screenwidth() / 2) - main_w_width / 2)
-main_w_start_y = int((main_w.winfo_screenheight() / 2) - main_w_height / 2)
-main_w.geometry(f"{800}x{600}+{main_w_start_x}+{main_w_start_y}")
+# Always position on center of the screen.
+screen_width: int = main_w.winfo_screenwidth()
+screen_height: int = main_w.winfo_screenheight()
+main_w_width: int = 800
+main_w_height: int = 600
+main_w_start_x: int = screen_width // 2 - main_w_width // 2
+main_w_start_y: int = screen_height // 2 - main_w_height // 2
+# Working correctly with 800x600 as min for me to test with my Monitor.
+main_w.geometry(f"{main_w_width}x{main_w_height}+{main_w_start_x}+{main_w_start_y}")
 main_w.resizable(False, False)
 main_w.iconphoto(True, icon)
 main_w.title("TicTacToe")
-main_w.config(padx=145,
-              pady=45, )
+main_w.config(
+    padx=145,
+    pady=45,
+    background=main_w_background,
+)
 main_w.protocol("WM_DELETE_WINDOW", lambda: (menu(), main_w.destroy()))
-# tiles setup #
-# I was thinking obviously making it by loop, but for this I would need coordinates and dictionary for them.
-# While I was thinking how to place and align them, already have made all of them.
-# Won't be needed dictionary with values for these buttons (for now), prefer leave it like this and hide with loop.
-tile_11 = Button(main_w,
-                 image=o_mark,
-                 highlightthickness=0,
-                 border=0,
-                 relief=tkinter.RIDGE,
-                 )
-tile_11.grid(row=0,
-             column=0,
-             )
-tile_12 = Button(main_w,
-                 image=x_mark,
-                 highlightthickness=0,
-                 border=0,
-                 relief=tkinter.RIDGE,
-                 )
-tile_12.grid(row=0,
-             column=1,
-             )
-tile_13 = Button(main_w,
-                 image=o_mark,
-                 highlightthickness=0,
-                 border=0,
-                 relief=tkinter.RIDGE,
-                 )
-tile_13.grid(row=0,
-             column=2,
-             )
-tile_21 = Button(main_w,
-                 image=tile,
-                 highlightthickness=0,
-                 border=0,
-                 relief=tkinter.RIDGE,
-                 )
-tile_21.grid(row=1,
-             column=0,
-             )
-tile_22 = Button(main_w,
-                 image=o_mark,
-                 highlightthickness=0,
-                 border=0,
-                 relief=tkinter.RIDGE,
-                 )
-tile_22.grid(row=1,
-             column=1,
-             )
-tile_23 = Button(main_w,
-                 image=tile,
-                 highlightthickness=0,
-                 border=0,
-                 relief=tkinter.RIDGE,
-                 )
-tile_23.grid(row=1,
-             column=2,
-             )
-tile_31 = Button(main_w,
-                 image=tile,
-                 highlightthickness=0,
-                 border=0,
-                 relief=tkinter.RIDGE,
-                 )
-tile_31.grid(row=2,
-             column=0,
-             )
-tile_32 = Button(main_w,
-                 image=x_mark,
-                 highlightthickness=0,
-                 border=0,
-                 relief=tkinter.RIDGE,
-                 )
-tile_32.grid(row=2,
-             column=1,
-             )
-tile_33 = Button(main_w,
-                 image=o_mark,
-                 highlightthickness=0,
-                 border=0,
-                 relief=tkinter.RIDGE,
-                 )
-tile_33.grid(row=2,
-             column=2,
-             )
+# Tile buttons setup.
+# Same 9 tiles, and using main window children widgets 0 -> 8 inclusive.
+# First row.
+tile_11: Button = Button(
+    main_w,
+    image=tile,
+    highlightthickness=0,
+    border=0,
+    borderwidth=0,
+    background=main_w_background,
+    activebackground=main_w_background,
+    relief=tkinter.RIDGE,
+)
+tile_11.grid(
+    row=0,
+    column=0,
+)
+tile_12: Button = Button(
+    main_w,
+    image=tile,
+    highlightthickness=0,
+    border=0,
+    borderwidth=0,
+    background=main_w_background,
+    activebackground=main_w_background,
+    relief=tkinter.RIDGE,
+)
+tile_12.grid(
+    row=0,
+    column=1,
+)
+tile_13: Button = Button(
+    main_w,
+    image=o_mark,
+    highlightthickness=0,
+    border=0,
+    borderwidth=0,
+    background=main_w_background,
+    activebackground=main_w_background,
+    relief=tkinter.RIDGE,
+)
+tile_13.grid(
+    row=0,
+    column=2,
+)
+# Second row.
+tile_21: Button = Button(
+    main_w,
+    image=tile,
+    highlightthickness=0,
+    border=0,
+    borderwidth=0,
+    background=main_w_background,
+    activebackground=main_w_background,
+    relief=tkinter.RIDGE,
+)
+tile_21.grid(
+    row=1,
+    column=0,
+)
+tile_22: Button = Button(
+    main_w,
+    image=o_mark,
+    highlightthickness=0,
+    border=0,
+    borderwidth=0,
+    background=main_w_background,
+    activebackground=main_w_background,
+    relief=tkinter.RIDGE,
+)
+tile_22.grid(
+    row=1,
+    column=1,
+)
+tile_23: Button = Button(
+    main_w,
+    image=tile,
+    highlightthickness=0,
+    border=0,
+    borderwidth=0,
+    background=main_w_background,
+    activebackground=main_w_background,
+    relief=tkinter.RIDGE,
+)
+tile_23.grid(
+    row=1,
+    column=2,
+)
+# Third row.
+tile_31: Button = Button(
+    main_w,
+    image=tile,
+    highlightthickness=0,
+    border=0,
+    borderwidth=0,
+    background=main_w_background,
+    activebackground=main_w_background,
+    relief=tkinter.RIDGE,
+)
+tile_31.grid(
+    row=2,
+    column=0,
+)
+tile_32: Button = Button(
+    main_w,
+    image=x_mark,
+    highlightthickness=0,
+    border=0,
+    borderwidth=0,
+    background=main_w_background,
+    activebackground=main_w_background,
+    relief=tkinter.RIDGE,
+)
+tile_32.grid(
+    row=2,
+    column=1,
+)
+tile_33: Button = Button(
+    main_w,
+    image=o_mark,
+    highlightthickness=0,
+    border=0,
+    borderwidth=0,
+    background=main_w_background,
+    activebackground=main_w_background,
+    relief=tkinter.RIDGE,
+)
+tile_33.grid(
+    row=2,
+    column=2,
+)
+# Not part of the start window. Hide.
 hide_tiles()
-# replay button #
-replay_button = Button(main_w,
-                       image=replay_icon,
-                       highlightthickness=0,
-                       border=0,
-                       relief=tkinter.RIDGE,
-                       command=lambda: (hide_tiles(), screenshot()),
-                       )
+# Replay button.
+replay_button: Button = Button(
+    main_w,
+    image=replay_icon,
+    highlightthickness=0,
+    border=0,
+    borderwidth=0,
+    background=main_w_background,
+    activebackground=main_w_background,
+    relief=tkinter.RIDGE,
+    command=lambda: (hide_tiles(), screenshot()),
+)
 replay_button.grid(
     row=1,
     column=3,
     padx=(15, 0)
 )
+# Not part of the start window. Hide.
 replay_button.grid_remove()
-# go back button #
-go_back_button = Button(main_w,
-                        image=go_back_icon,
-                        highlightthickness=0,
-                        border=0,
-                        relief=tkinter.RIDGE,
-                        command=lambda: (hide_tiles(), screenshot(), menu())
-                        )
-go_back_button.grid(row=2,
-                    column=3,
-                    padx=(15, 0),
-                    )
+# Go back to menu button.
+go_back_button: Button = Button(
+    main_w,
+    image=go_back_icon,
+    highlightthickness=0,
+    border=0,
+    borderwidth=0,
+    background=main_w_background,
+    activebackground=main_w_background,
+    relief=tkinter.RIDGE,
+    command=lambda: (hide_tiles(), screenshot(), menu())
+)
+go_back_button.grid(
+    row=2,
+    column=3,
+    padx=(15, 0),
+)
+# Not part of the start window. Hide.
 go_back_button.grid_remove()
-# start button #
-start_button = Button(main_w,
-                      image=start_icon,
-                      highlightthickness=0,
-                      border=0,
-                      relief=tkinter.RIDGE,
-                      command=start_game,
-                      )
-start_button.grid(row=0,
-                  columnspan=2,
-                  padx=(30, 30),
-                  )
-# history button #
-history_button = Button(main_w,
-                        compound="right",
-                        text="Played",
-                        font=("Helvetica", 15, "bold"),
-                        image=history_icon,
-                        highlightthickness=0,
-                        border=0,
-                        relief=tkinter.RIDGE,
-                        command=history,
-                        )
-history_button.grid(row=1,
-                    column=0,
-                    sticky="w",
-                    pady=(10, 0),
-                    )
-# versus button #
-versus_button = Button(main_w,
-                       image=versus_icon,
-                       highlightthickness=0,
-                       border=0,
-                       relief=tkinter.RIDGE,
-                       command=lambda: start_game(ai=True),
-                       )
-versus_button.grid(row=1,
-                   column=1,
-                   sticky="e",
-                   pady=(10, 0),
-                   padx=(25, 0),
-                   )
-# history image #
-history_label = Canvas(main_w,
-                       width=525,
-                       height=520)
-
-history_label.grid(row=0,
-                   column=1,
-                   sticky="nsew",
-                   )
+# Start game with 2 players button.
+start_button: Button = Button(
+    main_w,
+    image=start_icon,
+    highlightthickness=0,
+    border=0,
+    borderwidth=0,
+    background=main_w_background,
+    activebackground=main_w_background,
+    relief=tkinter.RIDGE,
+    command=start_game,
+)
+start_button.grid(
+    row=0,
+    columnspan=2,
+    padx=(30, 30),
+)
+# Start game vs computer button.
+versus_button: Button = Button(
+    main_w,
+    image=versus_icon,
+    highlightthickness=0,
+    border=0,
+    borderwidth=0,
+    background=main_w_background,
+    activebackground=main_w_background,
+    relief=tkinter.RIDGE,
+    command=lambda: start_game(ai=True),
+)
+versus_button.grid(
+    row=1,
+    column=1,
+    sticky="e",
+    pady=(10, 0),
+    padx=(25, 0),
+)
+# History button.
+history_button: Button = Button(
+    main_w,
+    compound="right",
+    text="Played",
+    font=("Helvetica", 15, "bold"),
+    image=history_icon,
+    highlightthickness=0,
+    border=0,
+    borderwidth=0,
+    relief=tkinter.RIDGE,
+    command=history,
+    background=main_w_background,
+    activebackground=main_w_background,
+)
+history_button.grid(
+    row=1,
+    column=0,
+    sticky="w",
+    pady=(10, 0),
+)
+# History window made as canvas on main_w.
+history_label: Canvas = Canvas(
+    main_w,
+    width=525,
+    height=520,
+    background=main_w_background,
+    border=0,
+    borderwidth=0,
+    highlightthickness=0,
+)
+history_label.grid(
+    row=0,
+    column=1,
+    sticky="nsew",
+)
 history_label.grid_remove()
-# history to menu #
-history_go_back_button = Button(main_w,
-                                image=go_back_icon,
-                                highlightthickness=0,
-                                border=0,
-                                relief=tkinter.RIDGE,
-                                command=menu,
-                                )
-history_go_back_button.grid(row=0,
-                            column=2,
-                            sticky="s",
-                            )
+# History go back to menu button.
+history_go_back_button: Button = Button(
+    main_w,
+    image=go_back_icon,
+    highlightthickness=0,
+    border=0,
+    borderwidth=0,
+    background=main_w_background,
+    activebackground=main_w_background,
+    relief=tkinter.RIDGE,
+    command=menu,
+)
+history_go_back_button.grid(
+    row=0,
+    column=2,
+    sticky="s",
+)
+# Not part of the start window. Hide.
 history_go_back_button.grid_remove()
-# History Combobox #
-style = ttk.Style()
-style.configure("TCombobox", fieldbackground="white", foreground="black")
-history_choose_game = ttk.Combobox(main_w,
-                                   width=12,
-                                   justify="center",
-                                   state="readonly",
-                                   font=("Helvetica", 10, "bold"),
-
-                                   )
+# History Combobox, dropbox with all games saved.
+history_choose_game: ttk.Combobox = ttk.Combobox(
+    main_w,
+    width=12,
+    justify="center",
+    state="readonly",
+    font=("Helvetica", 10, "bold"),
+)
 history_choose_game.option_add("*TCombobox*Listbox.Justify", "center")
 history_choose_game.bind("<<ComboboxSelected>>", lambda event: (main_w.focus(), history_game_chosen()))
-history_choose_game.grid(row=0,
-                         column=2,
-                         sticky="n",
-                         )
+history_choose_game.grid(
+    row=0,
+    column=2,
+    sticky="n",
+)
+# Not part of the start window. Hide.
 history_choose_game.grid_remove()
-# History: previous turn button #
-history_prev_turn_button = Button(main_w,
-                                  image=prev_turn_icon,
-                                  highlightthickness=0,
-                                  border=0,
-                                  relief=tkinter.RIDGE,
-                                  command=lambda: history_next_turn(back=True),
-                                  )
-history_prev_turn_button.grid(row=0,
-                              column=0,
-                              )
+# History: previous turn button.
+history_prev_turn_button: Button = Button(
+    main_w,
+    image=prev_turn_icon,
+    highlightthickness=0,
+    border=0,
+    borderwidth=0,
+    background=main_w_background,
+    activebackground=main_w_background,
+    relief=tkinter.RIDGE,
+    command=lambda: history_next_turn(back=True),
+)
+history_prev_turn_button.grid(
+    row=0,
+    column=0,
+)
+# Not part of the start window. Hide.
 history_prev_turn_button.grid_remove()
-# History: next turn button #
-history_next_turn_button = Button(main_w,
-                                  image=next_turn_icon,
-                                  highlightthickness=0,
-                                  border=0,
-                                  relief=tkinter.RIDGE,
-                                  command=history_next_turn,
-                                  )
-history_next_turn_button.grid(row=0,
-                              column=2,
-                              sticky="w",
-                              )
+# History: next turn button
+history_next_turn_button: Button = Button(
+    main_w,
+    image=next_turn_icon,
+    highlightthickness=0,
+    border=0,
+    borderwidth=0,
+    background=main_w_background,
+    activebackground=main_w_background,
+    relief=tkinter.RIDGE,
+    command=history_next_turn,
+)
+history_next_turn_button.grid(
+    row=0,
+    column=2,
+    sticky="w",
+)
+# Not part of the start window. Hide.
 history_next_turn_button.grid_remove()
 # History: delete game button #
-history_delete_button = Button(main_w,
-                               image=delete_icon,
-                               highlightthickness=0,
-                               border=0,
-                               relief=tkinter.RIDGE,
-                               command=delete_history_game_chosen,
-                               )
-history_delete_button.grid(row=0,
-                           column=0,
-                           sticky="sw",
-                           )
+history_delete_button = Button(
+    main_w,
+    image=delete_icon,
+    highlightthickness=0,
+    border=0,
+    borderwidth=0,
+    background=main_w_background,
+    activebackground=main_w_background,
+    relief=tkinter.RIDGE,
+    command=delete_history_game_chosen,
+)
+history_delete_button.grid(
+    row=0,
+    column=0,
+    sticky="sw",
+)
+# Not part of the start window. Hide.
 history_delete_button.grid_remove()
+
 main_w.mainloop()
